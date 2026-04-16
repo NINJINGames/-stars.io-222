@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Stars.io</title>
+<link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:#020615;
+  color:white;
+  font-family:'Turret Road', sans-serif;
+  overflow:hidden;
+}
+
+/* 共通 */
+button{
+  font-family:'Turret Road', sans-serif;
+  background:#111a33;
+  color:#cfefff;
+  border:1px solid #4ad0ff;
+  padding:8px 16px;
+  border-radius:10px;
+  cursor:pointer;
+}
+button:hover{
+  background:#1a2544;
+}
+
+/* ゲームキャンバス */
+canvas{
+  display:block;
+}
+
+/* 上部UI */
+#ui{
+  position:fixed;
+  top:10px;
+  left:10px;
+  z-index:5;
+  font-size:14px;
+  pointer-events:none;
+}
+#modeLabel{
+  position:fixed;
+  top:10px;
+  right:10px;
+  font-size:14px;
+  color:#8cf;
+  z-index:5;
+}
+
+/* ダッシュゲージ */
+#dashBarOuter{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  width:220px;
+  height:12px;
+  border:2px solid #0ff;
+  border-radius:8px;
+  z-index:5;
+}
+#dashBarInner{
+  width:0%;
+  height:100%;
+  background:#0ff;
+  border-radius:6px;
+}
+
+/* タイトル画面 */
+#titleScreen{
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle at top,#1a2a55,#020615 60%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding-top:80px;
+  z-index:10;
+}
+#titleScreen h1{
+  font-size:48px;
+  margin-bottom:10px;
+  text-shadow:0 0 20px #4ad0ff;
+}
+#titleButtons{
+  margin-top:20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+#modeSelect{
+  margin-top:20px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+#modeSelect select{
+  background:#111a33;
+  color:#cfefff;
+  border:1px solid #4ad0ff;
+  border-radius:8px;
+  padding:4px 8px;
+  font-family:'Turret Road', sans-serif;
+}
+
+/* ランキングエリア（タイトル内） */
+#rankingPanel{
+  margin-top:40px;
+  width:70%;
+  max-width:700px;
+  background:rgba(10,15,35,0.8);
+  border-radius:16px;
+  padding:16px;
+  border:1px solid #4ad0ff55;
+}
+#rankingTabs{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.rankTab{
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid #4ad0ff55;
+  cursor:pointer;
+  font-size:12px;
+}
+.rankTab.active{
+  background:#4ad0ff33;
+}
+#rankingList{
+  max-height:220px;
+  overflow-y:auto;
+  padding-right:4px;
+}
+.rankRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:4px 8px;
+  margin-bottom:4px;
+  background:rgba(15,25,55,0.8);
+  border-radius:10px;
+  font-size:12px;
+}
+.rankLeft{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.rankColorDot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+}
+
+/* スキン画面 */
+#skinScreen{
+  position:fixed;
+  inset:0;
+  background:rgba(2,6,21,0.96);
+  display:none;
+  flex-direction:column;
+  padding:20px;
+  z-index:11;
+}
+#skinTopBar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+#skinGrid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  grid-auto-rows:60px;
+  gap:10px;
+  flex:1;
+  overflow-y:auto;
+  padding-right:4px;
+}
+.skinCell{
+  border-radius:14px;
+  background:#111628;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  position:relative;
+}
+.skinCore{
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  box-shadow:0 0 12px rgba(255,255,255,0.6);
+}
+.skinLocked{
+  filter:grayscale(1) brightness(0.4);
+}
+.skinCell span{
+  position:absolute;
+  bottom:4px;
+  font-size:10px;
+  color:#cfefffaa;
+}
+#skinDetail{
+  margin-top:10px;
+  padding:10px;
+  border-radius:14px;
+  background:#111628;
+  min-height:90px;
+  font-size:12px;
+}
+
+/* 設定画面（簡易） */
+#settingsScreen{
+  position:fixed;
+  inset:0;
+  background:rgba(2,6,21,0.96);
+  display:none;
+  flex-direction:column;
+  padding:20px;
+  z-index:11;
+}
+#settingsTopBar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+.settingItem{
+  margin-bottom:10px;
+  font-size:13px;
+}
+
+/* 実績通知 */
+#achievementToast{
+  position:fixed;
+  top:-80px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:8px 16px;
+  background:rgba(15,25,55,0.95);
+  border-radius:14px;
+  border:1px solid #4ad0ff;
+  font-size:13px;
+  box-shadow:0 0 18px rgba(74,208,255,0.7);
+  opacity:0;
+  z-index:20;
+  transition:transform 0.6s cubic-bezier(0.15,0.85,0.25,1),
+             opacity 0.6s ease;
+}
+#achievementToast.show{
+  transform:translate(-50%, 40px);
+  opacity:1;
+}
+#achievementToast.fade{
+  opacity:0;
+}
+
+/* ゲームオーバー簡易 */
+#gameOverScreen{
+  position:fixed;
+  inset:0;
+  background:rgba(2,6,21,0.9);
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:12;
+}
+#gameOverScreen h2{
+  font-size:32px;
+  margin-bottom:10px;
+}
+#gameOverInfo{
+  margin-bottom:20px;
+  font-size:14px;
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- 上部UI -->
+<div id="ui">
+  <div id="name">You: Player</div>
+  <div id="score">Score: 0</div>
+</div>
+<div id="modeLabel">Mode: FREE</div>
+<div id="dashBarOuter"><div id="dashBarInner"></div></div>
+
+<!-- タイトル画面 -->
+<div id="titleScreen">
+  <h1>Stars.io</h1>
+  <div>光る星で遊ぶ io っぽいゲーム（仮）</div>
+
+  <div id="titleButtons">
+    <button id="btnStart">START</button>
+    <button id="btnSkin">SKIN</button>
+    <button id="btnSettings">SETTINGS</button>
+  </div>
+
+  <div id="modeSelect">
+    <span>Mode:</span>
+    <select id="modeDropdown">
+      <option value="FREE">FREE</option>
+      <option value="SURVIVAL">SURVIVAL</option>
+      <option value="TAG">TAG</option>
+      <option value="TIMEATTACK">TIME ATTACK</option>
+      <option value="HUNTER">HUNTER</option>
+    </select>
+  </div>
+
+  <div id="rankingPanel">
+    <div style="margin-bottom:6px;font-size:13px;">RANKING (TOP 100) - 仮データ</div>
+    <div id="rankingTabs">
+      <div class="rankTab active" data-mode="score">Score</div>
+      <div class="rankTab" data-mode="wins">1位回数</div>
+      <div class="rankTab" data-mode="freeTime">Free最長</div>
+    </div>
+    <div id="rankingList"></div>
+  </div>
+</div>
+
+<!-- スキン画面 -->
+<div id="skinScreen">
+  <div id="skinTopBar">
+    <div>SKIN - コアカラーコレクション (50)</div>
+    <button id="btnSkinBack">Back</button>
+  </div>
+  <div id="skinGrid"></div>
+  <div id="skinDetail">スキンを選ぶと詳細がここに表示されるよ。</div>
+</div>
+
+<!-- 設定画面 -->
+<div id="settingsScreen">
+  <div id="settingsTopBar">
+    <div>SETTINGS</div>
+    <button id="btnSettingsBack">Back</button>
+  </div>
+  <div class="settingItem">
+    音量（ダミー）：<input type="range" min="0" max="100" value="70">
+  </div>
+  <div class="settingItem">
+    発光強度（ダミー）：<input type="range" min="20" max="120" value="80">
+  </div>
+  <div class="settingItem">
+    ミニマップ：<input type="checkbox" id="chkMinimap" checked> 表示
+  </div>
+  <div class="settingItem">
+    FPS表示（ダミー）：<input type="checkbox"> ON
+  </div>
+</div>
+
+<!-- ゲームオーバー -->
+<div id="gameOverScreen">
+  <h2>GAME OVER</h2>
+  <div id="gameOverInfo"></div>
+  <div style="display:flex;gap:10px;">
+    <button id="btnRetry">Retry</button>
+    <button id="btnBackTitle">Back to Title</button>
+  </div>
+</div>
+
+<!-- 実績トースト -->
+<div id="achievementToast">[[✔] 新星の誕生]</div>
+
+<script>
+/* ========= 基本状態管理 ========= */
+let gameState = 'title'; // 'title' | 'game' | 'skin' | 'settings' | 'ranking'
+let currentMode = 'FREE';
+let minimapEnabled = true;
+
+/* ========= キャンバス & 入力 ========= */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+resize();
+window.addEventListener('resize', resize);
+
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', e=>{
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+document.addEventListener('mousedown', e=>{
+  if(gameState === 'game' && e.button===2) tryDash();
+});
+document.addEventListener('contextmenu', e=>e.preventDefault());
+document.addEventListener('keydown', e=>{
+  if(gameState === 'game' && e.key === 'Shift') tryDash();
+});
+
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+/* ========= ゲーム定数 ========= */
+const FIELD_SIZE = 7000;
+const FOOD_TARGET = 600;
+const BOT_COUNT = 10;
+
+/* ========= ゲームオブジェクト ========= */
+class Star{
+  constructor(x,y,r,color,isPlayer=false,isBot=false){
+    this.x = x;
+    this.y = y;
+    this.r = r;
+    this.displayR = r;
+    this.targetR = r;
+    this.color = color;
+    this.isPlayer = isPlayer;
+    this.isBot = isBot;
+    this.mass = r*r;
+    this.vx = 0;
+    this.vy = 0;
+  }
+  get speed(){
+    return Math.max(0.5, 6 - Math.sqrt(this.mass)/20);
+  }
+}
+class Food{
+  constructor(x,y,value){
+    this.x = x;
+    this.y = y;
+    this.value = value;
+    this.color = randomColor();
+  }
+}
+class Shard{
+  constructor(x,y,vx,vy,value,color){
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.value = value;
+    this.color = color;
+    this.life = 4000;
+  }
+}
+
+/* ========= ゲーム変数 ========= */
+let player;
+let bots = [];
+let foods = [];
+let shards = [];
+let lastTime = performance.now();
+
+let dashCharge = 1;
+let isDashing = false;
+let dashTime = 0;
+const DASH_CHARGE_TIME = 3000;
+const DASH_DURATION = 500;
+const DASH_MULTIPLIER = 3;
+
+// カメラ
+let camX = FIELD_SIZE/2;
+let camY = FIELD_SIZE/2;
+let camZoom = 1;
+
+// 実績（超簡易：今は「新星の誕生」だけデモ）
+let firstLightUnlocked = false;
+
+/* ========= ランキング仮データ ========= */
+const rankingData = [];
+for(let i=1;i<=100;i++){
+  rankingData.push({
+    rank:i,
+    name:'User'+String(i).padStart(3,'0'),
+    color: randomColor(),
+    score: Math.floor(150000 - i*1000 + Math.random()*500),
+    wins: Math.floor(Math.max(0,50 - i/2)),
+    freeTime: Math.floor(600 - i*3 + Math.random()*30) // 秒
+  });
+}
+
+/* ========= スキンデータ（簡易） ========= */
+const skins = [];
+// デフォ5
+const defaultColors = ['#55ddff','#7dff6b','#c66bff','#ffb347','#ffffff'];
+for(let i=0;i<5;i++){
+  skins.push({
+    id:i,
+    name:'Default '+(i+1),
+    type:'default',
+    color:defaultColors[i],
+    unlocked:true,
+    desc:'最初から使えるコアカラー。'
+  });
+}
+// 実績15（仮）
+for(let i=0;i<15;i++){
+  skins.push({
+    id:100+i,
+    name:'Achv '+(i+1),
+    type:'achievement',
+    color:randomColor(),
+    unlocked:false,
+    desc:'実績で解除される特別な色。'
+  });
+}
+// レベル30（仮）
+for(let i=0;i<30;i++){
+  skins.push({
+    id:200+i,
+    name:'Lv '+((i+1)*10),
+    type:'level',
+    color:randomColor(),
+    unlocked:false,
+    desc:'レベル'+((i+1)*10)+'で解放されるコアカラー。'
+  });
+}
+
+/* ========= 初期化 ========= */
+function resetGame(){
+  const spawn = randomSpawn();
+  player = new Star(spawn.x, spawn.y, 20, '#55ddff', true, false);
+  bots = [];
+  foods = [];
+  shards = [];
+  for(let i=0;i<BOT_COUNT;i++){
+    const s = randomSpawn();
+    bots.push(new Star(
+      s.x, s.y,
+      20+Math.random()*10,
+      '#ff4444',
+      false,
+      true
+    ));
+  }
+  for(let i=0;i<FOOD_TARGET;i++) spawnFood();
+  camX = player.x;
+  camY = player.y;
+  camZoom = 1;
+  dashCharge = 1;
+  isDashing = false;
+  dashTime = 0;
+}
+
+/* ========= メインループ ========= */
+requestAnimationFrame(loop);
+function loop(now){
+  const dt = now - lastTime;
+  lastTime = now;
+
+  if(gameState === 'game'){
+    updateGame(dt);
+    drawGame();
+  }else{
+    // タイトルや他画面のときは背景だけうっすら描画
+    drawBackgroundOnly();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+/* ========= ゲーム更新 ========= */
+function updateGame(dt){
+  // ダッシュチャージ
+  if(!isDashing){
+    dashCharge += dt / DASH_CHARGE_TIME;
+    if(dashCharge > 1) dashCharge = 1;
+  }else{
+    dashTime += dt;
+    if(dashTime >= DASH_DURATION){
+      isDashing = false;
+      dashTime = 0;
+    }
+  }
+
+  // プレイヤー移動
+  const cx = canvas.width/2;
+  const cy = canvas.height/2;
+  const dx = mouseX - cx;
+  const dy = mouseY - cy;
+  const dist = Math.hypot(dx,dy);
+  let spd = player.speed;
+  if(isDashing) spd *= DASH_MULTIPLIER;
+  if(dist > 10){
+    player.vx = dx/dist * spd;
+    player.vy = dy/dist * spd;
+  }else{
+    player.vx *= 0.9;
+    player.vy *= 0.9;
+  }
+  player.x += player.vx;
+  player.y += player.vy;
+  clampToField(player);
+
+  // bot移動
+  bots.forEach(b=>{
+    if(Math.random()<0.01){
+      const a = Math.random()*Math.PI*2;
+      b.vx = Math.cos(a)*b.speed;
+      b.vy = Math.sin(a)*b.speed;
+    }
+    b.x += b.vx;
+    b.y += b.vy;
+    clampToField(b);
+  });
+
+  // 成長補間
+  [player, ...bots].forEach(s=>{
+    s.displayR += (s.targetR - s.displayR) * 0.2;
+  });
+
+  // 食べる（プレイヤー）
+  for(let i=foods.length-1;i>=0;i--){
+    const f = foods[i];
+    if(collideCirclePoint(player, f.x, f.y, player.displayR)){
+      addMass(player, f.value);
+      foods.splice(i,1);
+    }
+  }
+  // 食べる（bot）
+  bots.forEach(b=>{
+    for(let i=foods.length-1;i>=0;i--){
+      const f = foods[i];
+      if(collideCirclePoint(b, f.x, f.y, b.displayR)){
+        addMass(b, f.value);
+        foods.splice(i,1);
+      }
+    }
+  });
+
+  // プレイヤー vs bot
+  for(let i=bots.length-1;i>=0;i--){
+    const b = bots[i];
+    const d = Math.hypot(player.x-b.x, player.y-b.y);
+    if(d < Math.max(player.displayR,b.displayR)){
+      if(player.mass > b.mass*1.2){
+        addMass(player, b.mass/2);
+        explode(b);
+        bots.splice(i,1);
+      }else if(b.mass > player.mass*1.2){
+        explode(player);
+        showGameOver();
+        return;
+      }
+    }
+  }
+
+  // シャード
+  for(let i=shards.length-1;i>=0;i--){
+    const s = shards[i];
+    s.life -= dt;
+    s.x += s.vx;
+    s.y += s.vy;
+    s.vx *= 0.98;
+    s.vy *= 0.98;
+    if(s.life <= 0){
+      shards.splice(i,1);
+      continue;
+    }
+    if(collideCirclePoint(player, s.x, s.y, player.displayR)){
+      addMass(player, s.value);
+      shards.splice(i,1);
+      continue;
+    }
+    for(const b of bots){
+      if(collideCirclePoint(b, s.x, s.y, b.displayR)){
+        addMass(b, s.value);
+        shards.splice(i,1);
+        break;
+      }
+    }
+  }
+
+  // 補充
+  while(foods.length < FOOD_TARGET) spawnFood();
+  while(bots.length < BOT_COUNT){
+    const s = randomSpawn();
+    bots.push(new Star(
+      s.x,s.y,
+      20+Math.random()*10,
+      '#ff4444',
+      false,
+      true
+    ));
+  }
+
+  // カメラ
+  const targetCamX = player.x;
+  const targetCamY = player.y;
+  camX += (targetCamX - camX) * 0.1;
+  camY += (targetCamY - camY) * 0.1;
+  const targetZoom = 1 / (0.5 + Math.sqrt(player.mass)/400);
+  camZoom += (targetZoom - camZoom) * 0.1;
+
+  // UI
+  document.getElementById('score').textContent = 'Score: ' + Math.floor(player.mass);
+  document.getElementById('dashBarInner').style.width = (dashCharge*100)+'%';
+
+  // 実績「新星の誕生」デモ（初回プレイ時）
+  if(!firstLightUnlocked){
+    firstLightUnlocked = true;
+    showAchievement('新星の誕生');
+  }
+}
+
+/* ========= 描画 ========= */
+function drawBackgroundOnly(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#020615';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+
+function drawGame(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  ctx.save();
+  ctx.translate(canvas.width/2, canvas.height/2);
+  ctx.scale(camZoom, camZoom);
+  ctx.translate(-camX, -camY);
+
+  // 背景
+  ctx.fillStyle = '#020822';
+  ctx.fillRect(camX-canvas.width, camY-canvas.height, canvas.width*2, canvas.height*2);
+
+  // フィールド境界
+  const glow = Math.max(0.2, 1 - distToEdge(player)/400);
+  ctx.strokeStyle = `rgba(120,220,255,${glow})`;
+  ctx.lineWidth = 30 * glow;
+  ctx.strokeRect(0,0,FIELD_SIZE,FIELD_SIZE);
+
+  // 食べ物
+  foods.forEach(f=>{
+    const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, 14);
+    g.addColorStop(0, f.color);
+    g.addColorStop(0.4, f.color);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(f.x,f.y,10,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // シャード
+  shards.forEach(s=>{
+    ctx.beginPath();
+    ctx.fillStyle = s.color;
+    ctx.shadowColor = 'white';
+    ctx.shadowBlur = 12;
+    ctx.arc(s.x,s.y,5,0,Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  // bot
+  bots.forEach(b=>{
+    drawStar(b,false);
+    ctx.fillStyle = 'white';
+    ctx.font = '14px "Turret Road", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('bot', b.x, b.y - b.displayR - 8);
+  });
+
+  // プレイヤー
+  drawStar(player,true);
+
+  ctx.restore();
+
+  // ミニマップ
+  if(minimapEnabled) drawMinimap();
+}
+
+/* ========= ユーティリティ ========= */
+function spawnFood(){
+  const s = randomSpawn();
+  const value = 50 + Math.random()*150;
+  foods.push(new Food(s.x,s.y,value));
+}
+function addMass(star, p){
+  star.mass += p;
+  star.targetR = Math.sqrt(star.mass);
+}
+function clampToField(star){
+  star.x = Math.max(star.targetR, Math.min(FIELD_SIZE-star.targetR, star.x));
+  star.y = Math.max(star.targetR, Math.min(FIELD_SIZE-star.targetR, star.y));
+}
+function collideCirclePoint(star, x,y, radius){
+  return Math.hypot(star.x-x, star.y-y) < radius;
+}
+function randomColor(){
+  const h = Math.floor(Math.random()*360);
+  return `hsl(${h},80%,60%)`;
+}
+function explode(star){
+  const count = 20 + Math.floor(Math.random()*20);
+  const base = star.displayR*2;
+  for(let i=0;i<count;i++){
+    const a = Math.random()*Math.PI*2;
+    const d = base * (0.3+Math.random()*0.7);
+    const sp = 0.4 + Math.random()*1.0;
+    const vx = Math.cos(a)*sp;
+    const vy = Math.sin(a)*sp;
+    const value = 20 + Math.random()*80;
+    shards.push(new Shard(
+      star.x + Math.cos(a)*d*0.1,
+      star.y + Math.sin(a)*d*0.1,
+      vx,vy,
+      value,
+      randomColor()
+    ));
+  }
+}
+function distToEdge(star){
+  const dLeft = star.x;
+  const dRight = FIELD_SIZE - star.x;
+  const dTop = star.y;
+  const dBottom = FIELD_SIZE - star.y;
+  return Math.min(dLeft,dRight,dTop,dBottom);
+}
+function drawStar(star,isPlayer){
+  const r = star.displayR;
+  const glowStrength = isPlayer ? (isDashing ? 1.4 : 0.7) : 0.4;
+  const grad = ctx.createRadialGradient(
+    star.x, star.y, r*0.2,
+    star.x, star.y, r*2.6
+  );
+  grad.addColorStop(0, `rgba(255,255,255,${glowStrength})`);
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(star.x,star.y,r*2.6,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.fillStyle = star.color;
+  ctx.shadowColor = star.color;
+  ctx.shadowBlur = r * 0.9;
+  ctx.arc(star.x,star.y,r*1.15,0,Math.PI*2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  if(isPlayer){
+    ctx.fillStyle = 'white';
+    ctx.font = '16px "Turret Road", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('You', star.x, star.y - r - 12);
+  }
+}
+function drawMinimap(){
+  const size = 180;
+  const margin = 20;
+  const x = canvas.width - size - margin;
+  const y = canvas.height - size - margin;
+
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.fillStyle = 'rgba(5,10,25,0.9)';
+  ctx.fillRect(0,0,size,size);
+  ctx.strokeStyle = 'rgba(120,220,255,0.8)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0,0,size,size);
+
+  const px = (player.x / FIELD_SIZE) * size;
+  const py = (player.y / FIELD_SIZE) * size;
+  ctx.fillStyle = '#55ddff';
+  ctx.beginPath();
+  ctx.arc(px,py,4,0,Math.PI*2);
+  ctx.fill();
+
+  bots.forEach(b=>{
+    const bx = (b.x / FIELD_SIZE) * size;
+    const by = (b.y / FIELD_SIZE) * size;
+    ctx.fillStyle = '#ff5555';
+    ctx.beginPath();
+    ctx.arc(bx,by,3,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  ctx.restore();
+}
+function tryDash(){
+  if(!isDashing && dashCharge >= 1){
+    isDashing = true;
+    dashCharge = 0;
+    dashTime = 0;
+  }
+}
+function randomSpawn(){
+  const margin = 150;
+  return {
+    x: margin + Math.random()*(FIELD_SIZE - margin*2),
+    y: margin + Math.random()*(FIELD_SIZE - margin*2)
+  };
+}
+
+/* ========= 実績トースト ========= */
+const toast = document.getElementById('achievementToast');
+let toastTimeout = null;
+function showAchievement(name){
+  toast.textContent = `[[✔] ${name}]`;
+  toast.classList.remove('fade');
+  toast.classList.add('show');
+  if(toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(()=>{
+    toast.classList.add('fade');
+    setTimeout(()=>{
+      toast.classList.remove('show');
+      toast.classList.remove('fade');
+    },600);
+  },2000);
+}
+
+/* ========= ゲームオーバー ========= */
+const gameOverScreen = document.getElementById('gameOverScreen');
+const gameOverInfo = document.getElementById('gameOverInfo');
+function showGameOver(){
+  gameState = 'gameOver';
+  gameOverInfo.textContent = 'Score: '+Math.floor(player.mass);
+  gameOverScreen.style.display = 'flex';
+}
+
+/* ========= タイトル・ボタン ========= */
+const titleScreen = document.getElementById('titleScreen');
+const btnStart = document.getElementById('btnStart');
+const btnSkin = document.getElementById('btnSkin');
+const btnSettings = document.getElementById('btnSettings');
+const modeDropdown = document.getElementById('modeDropdown');
+const modeLabel = document.getElementById('modeLabel');
+
+btnStart.onclick = ()=>{
+  titleScreen.style.display = 'none';
+  gameOverScreen.style.display = 'none';
+  gameState = 'game';
+  resetGame();
+  modeLabel.textContent = 'Mode: '+currentMode;
+};
+btnSkin.onclick = ()=>{
+  titleScreen.style.display = 'none';
+  showSkinScreen();
+};
+btnSettings.onclick = ()=>{
+  titleScreen.style.display = 'none';
+  showSettingsScreen();
+};
+modeDropdown.onchange = ()=>{
+  currentMode = modeDropdown.value;
+};
+
+/* ========= スキン画面 ========= */
+const skinScreen = document.getElementById('skinScreen');
+const skinGrid = document.getElementById('skinGrid');
+const skinDetail = document.getElementById('skinDetail');
+const btnSkinBack = document.getElementById('btnSkinBack');
+
+function showSkinScreen(){
+  gameState = 'skin';
+  skinScreen.style.display = 'flex';
+  renderSkinGrid();
+}
+btnSkinBack.onclick = ()=>{
+  skinScreen.style.display = 'none';
+  titleScreen.style.display = 'flex';
+  gameState = 'title';
+};
+
+function renderSkinGrid(){
+  skinGrid.innerHTML = '';
+  skins.forEach((s,idx)=>{
+    const cell = document.createElement('div');
+    cell.className = 'skinCell';
+    const core = document.createElement('div');
+    core.className = 'skinCore';
+    core.style.background = s.color;
+    if(!s.unlocked) core.classList.add('skinLocked');
+    const label = document.createElement('span');
+    label.textContent = s.name;
+    cell.appendChild(core);
+    cell.appendChild(label);
+    cell.onclick = ()=>{
+      showSkinDetail(s);
+    };
+    skinGrid.appendChild(cell);
+  });
+}
+function showSkinDetail(s){
+  const lockedText = s.unlocked ? '' : '（未取得）';
+  skinDetail.innerHTML = `
+    <div style="margin-bottom:6px;">スキン：${s.name}${lockedText}</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:${s.unlocked?s.color:'#444'};box-shadow:0 0 16px ${s.unlocked?s.color:'#000'};"></div>
+      <div style="font-size:11px;">
+        種類：${s.type}<br>
+        説明：${s.desc}<br>
+        条件：${s.type==='default'?'最初から解放':(s.type==='achievement'?'実績達成で解放':'レベルアップで解放')}
+      </div>
+    </div>
+  `;
+}
+
+/* ========= 設定画面 ========= */
+const settingsScreen = document.getElementById('settingsScreen');
+const btnSettingsBack = document.getElementById('btnSettingsBack');
+const chkMinimap = document.getElementById('chkMinimap');
+
+function showSettingsScreen(){
+  gameState = 'settings';
+  settingsScreen.style.display = 'flex';
+}
+btnSettingsBack.onclick = ()=>{
+  settingsScreen.style.display = 'none';
+  titleScreen.style.display = 'flex';
+  gameState = 'title';
+};
+chkMinimap.onchange = ()=>{
+  minimapEnabled = chkMinimap.checked;
+};
+
+/* ========= ランキングUI ========= */
+const rankingTabs = document.querySelectorAll('.rankTab');
+const rankingList = document.getElementById('rankingList');
+let rankingMode = 'score';
+
+rankingTabs.forEach(tab=>{
+  tab.onclick = ()=>{
+    rankingTabs.forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    rankingMode = tab.dataset.mode;
+    renderRanking();
+  };
+});
+function renderRanking(){
+  rankingList.innerHTML = '';
+  const sorted = [...rankingData];
+  if(rankingMode === 'score'){
+    sorted.sort((a,b)=>b.score-a.score);
+  }else if(rankingMode === 'wins'){
+    sorted.sort((a,b)=>b.wins-a.wins);
+  }else{
+    sorted.sort((a,b)=>b.freeTime-a.freeTime);
+  }
+  sorted.slice(0,100).forEach((p,i)=>{
+    const row = document.createElement('div');
+    row.className = 'rankRow';
+    const left = document.createElement('div');
+    left.className = 'rankLeft';
+    const rankSpan = document.createElement('span');
+    rankSpan.textContent = '#'+String(i+1).padStart(3,'0');
+    const dot = document.createElement('div');
+    dot.className = 'rankColorDot';
+    dot.style.background = p.color;
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = p.name;
+    nameSpan.style.color = p.color;
+    left.appendChild(rankSpan);
+    left.appendChild(dot);
+    left.appendChild(nameSpan);
+
+    const right = document.createElement('div');
+    if(rankingMode === 'score'){
+      right.textContent = 'Score: '+p.score;
+    }else if(rankingMode === 'wins'){
+      right.textContent = 'Wins: '+p.wins;
+    }else{
+      const m = Math.floor(p.freeTime/60);
+      const s = p.freeTime%60;
+      right.textContent = 'Time: '+m+':'+String(s).padStart(2,'0');
+    }
+
+    row.appendChild(left);
+    row.appendChild(right);
+    rankingList.appendChild(row);
+  });
+}
+renderRanking();
+
+/* ========= ゲームオーバー操作 ========= */
+document.getElementById('btnRetry').onclick = ()=>{
+  gameOverScreen.style.display = 'none';
+  gameState = 'game';
+  resetGame();
+};
+document.getElementById('btnBackTitle').onclick = ()=>{
+  gameOverScreen.style.display = 'none';
+  titleScreen.style.display = 'flex';
+  gameState = 'title';
+};
+</script>
+</body>
+</html>
